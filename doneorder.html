@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Berben'z Snacks - Order & Payment</title>
+    <style>
+    body {
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(135deg, #24858b, #ff8a65);
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+    .container {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        padding: 30px;
+        width: 450px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    h1 {
+        text-align: center;
+        color: #333;
+    }
+    .item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #fff8e1;
+        padding: 10px 15px;
+        border-radius: 6px;
+    }
+    .controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .controls button {
+        width: 30px;
+        height: 30px;
+        border: none;
+        border-radius: 50%;
+        font-size: 1.2rem;
+        cursor: pointer;
+        background: #0288d1;
+        color: #fff;
+    }
+    .controls button:hover {
+        background: #0277bd;
+    }
+    .total {
+        text-align: right;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    /* Style for actions (Clear and Confirm buttons placed below the order list) */
+    .actions {
+        display: flex;
+        justify-content: space-between; /* Align buttons side by side */
+        gap: 10px;
+        width: 100%;
+        margin-top: 20px; /* Add some space above the buttons */
+    }
+    .actions button {
+        padding: 10px 20px;
+        font-size: 1rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        color: #fff;
+        width: 48%; /* Set button width to make them equal size */
+    }
+    .back {
+        background: #9e9e9e;
+    }
+    .back:hover {
+        background: #757575;
+    }
+    .confirm {
+        background: #ff7043;
+    }
+    .confirm:hover {
+        background: #f4511e;
+    }
+
+    /* Payment Section */
+    #payment-section {
+        display: none;
+        flex-direction: column;
+        gap: 20px;
+    }
+    .payment-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        width: 100%;
+    }
+    .payment-list li {
+        background: #fff8e1;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 6px;
+        text-align: center;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
+    .payment-list li:hover {
+        background: #ffecb3;
+    }
+    .proceed {
+        background: #4caf50;
+    }
+    .proceed:hover {
+        background: #388e3c;
+    }
+/* Thank You Section */
+#thank-you-section {
+    display: none;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.actions {
+    display: flex;
+    justify-content: center; /* Center the button horizontally */
+    align-items: center; /* Center the button vertically */
+    width: 100%;
+    gap: 20px; /* Adjust the spacing if necessary */
+}
+
+.actions button {
+    padding: 10px 20px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #fff;
+    background-color: #388e3c;
+}
+
+.actions button:hover {
+    background-color: #388e3c;
+}
+
+    </style>
+</head>
+<body>
+    <div class="container">
+    <!-- ORDER SECTION -->
+    <div id="order-section">
+        <div id="order-list"></div>
+        <div class="total" id="grand-total">Total: ₱0.00</div>
+        <!-- Actions (Clear and Confirm buttons placed below the order list) -->
+        <div class="actions">
+        <button class="back" onclick="resetOrder()">Clear</button>
+        <button class="confirm" onclick="confirmOrder()">Confirm</button>
+        </div>
+    </div>
+
+    <!-- PAYMENT SECTION -->
+    <div id="payment-section">
+        <h1>Select Payment Method</h1>
+        <ul class="payment-list" id="payment-options">
+        <li onclick="selectPayment(event, 'GCash')">GCash</li>
+        <li onclick="selectPayment(event, 'PayMaya')">PayMaya</li>
+        <li onclick="selectPayment(event, 'Cash')">Cash</li>
+        </ul>
+        <div class="actions">
+        <button class="back" onclick="goBack()">Back</button>
+        <button class="proceed" onclick="finalizeOrder()">Proceed</button>
+        </div>
+    </div>
+<!-- THANK YOU SECTION -->
+<div id="thank-you-section">
+    <h1>Thank You for Ordering!</h1>
+    <p id="order-number"></p>
+    <div class="actions">
+        <!-- Dine-in button converted into a clickable button -->
+        <button class="back" onclick="window.location.href='index.html'">Return</button>
+    </div>
+</div>
+
+    <script>
+        const snacks = [
+            { name: "Tempura", price: 10 },
+            { name: "KwekKwek", price: 12 },
+            { name: "Combo", price: 25 },
+            { name: "Buko", price: 15 },
+            { name: "Shake", price: 20 },
+            { name: "Scramble", price: 12 },
+            { name: "Pancit Canton", price: 18 },
+            { name: "Hotdog", price: 15 },
+            { name: "Cornbeef", price: 25 },
+        ];
+        
+        const order = {};
+        let selectedPayment = null;
+        let orderNumber = null;
+        
+        function updateTotal() {
+            const container = document.getElementById("order-list");
+            const grandTotalDiv = document.getElementById("grand-total");
+            container.innerHTML = "";
+            let total = 0;
+        
+            snacks.forEach((snack) => {
+            const qty = order[snack.name] || 0;
+            const itemTotal = snack.price * qty;
+            total += itemTotal;
+        
+            const itemDiv = document.createElement("div");
+            itemDiv.className = "item";
+            itemDiv.innerHTML = `
+            <div class="item-name">
+                ${snack.name} - ₱${snack.price.toFixed(2)}
+            </div>
+            <div class="controls">
+                <button onclick="changeQty('${snack.name}', -1)">-</button>
+                <span>${qty}</span>
+                <button onclick="changeQty('${snack.name}', 1)">+</button>
+            </div>`;
+            container.appendChild(itemDiv);
+            });
+        
+            grandTotalDiv.textContent = `Total: ₱${total.toFixed(2)}`;
+        }
+        
+        function changeQty(name, delta) {
+            if (!order[name]) order[name] = 0;
+            order[name] += delta;
+            if (order[name] < 0) order[name] = 0;
+            updateTotal();
+        }
+        
+        function confirmOrder() {
+            const items = Object.entries(order).filter(([_, qty]) => qty > 0);
+            if (items.length === 0) {
+            alert("No items selected.");
+            return;
+            }
+        
+            document.getElementById("order-section").style.display = "none";
+            document.getElementById("payment-section").style.display = "flex";
+        }
+        
+        function selectPayment(event, method) {
+            selectedPayment = method;
+            document.querySelectorAll(".payment-list li").forEach((item) => {
+            item.style.background = "#fff8e1";
+            });
+            event.target.style.background = "#ffe082";
+        }
+        
+        function finalizeOrder() {
+            if (!selectedPayment) {
+            alert("Please select a payment method.");
+            return;
+            }
+        
+            const items = Object.entries(order).filter(([_, qty]) => qty > 0);
+            let message = "Order Confirmed:\n";
+            let grandTotal = 0;
+            items.forEach(([name, qty]) => {
+            const price = snacks.find((s) => s.name === name).price;
+            const lineTotal = price * qty;
+            grandTotal += lineTotal;
+            message += `- ${name} x${qty} = ₱${lineTotal.toFixed(2)}\n`;
+            });
+        
+            message += `\nGrand Total: ₱${grandTotal.toFixed(2)}`;
+            message += `\nPayment Method: ${selectedPayment}`;
+            alert(message);
+        
+            // Generate a random order number
+            orderNumber = Math.floor(Math.random() * 1000000);
+        
+            // Display the thank you screen with the order number
+            document.getElementById("thank-you-section").style.display = "block";
+            document.getElementById("order-number").textContent = `Order Number: #${orderNumber}`;
+        
+            // Hide payment section
+            document.getElementById("payment-section").style.display = "none";
+        
+            // After confirmation, go to the "Dine In / Take Out" section
+        }
+        
+        function goBack() {
+            document.getElementById("payment-section").style.display = "none";
+            document.getElementById("order-section").style.display = "flex";
+            clearPaymentSelection();
+        }
+        
+        function clearPaymentSelection() {
+            selectedPayment = null;
+            document.querySelectorAll(".payment-list li").forEach((item) => {
+            item.style.background = "#fff8e1";
+            });
+        }
+        
+        function resetOrder() {
+            for (let snack of snacks) {
+            order[snack.name] = 0;
+            }
+            updateTotal();
+            clearPaymentSelection();
+            selectedPayment = null;
+            document.getElementById("thank-you-section").style.display = "none";
+            document.getElementById("payment-section").style.display = "none";
+            document.getElementById("order-section").style.display = "flex";
+        }
+        
+        // Display the "Dine In / Take Out" page after order is confirmed
+        function showDineInTakeOut() {
+            document.getElementById("thank-you-section").style.display = "none";
+            document.getElementById("options").classList.remove("hidden"); // Show the dine-in/take-out options
+        }
+        
+        resetOrder();
+    </script>
+</body>
+</html>
